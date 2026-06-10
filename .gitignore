@@ -1,0 +1,31 @@
+# Environment and local tooling
+.env
+.env.*
+.venv/
+venv/
+
+# JavaScript dependencies and builds
+node_modules/
+.next/
+dist/
+build/
+
+# Python caches and test artifacts
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Coverage and logs
+.coverage
+coverage/
+*.log
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
+
+# Docker data
+postgres_data/
+
