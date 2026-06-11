@@ -16,7 +16,7 @@ if str(ROOT) not in sys.path:
 from app.api.deps import get_db  # noqa: E402
 from app.db.base import Base  # noqa: E402
 from app.main import app  # noqa: E402
-from app.models import Task, User  # noqa: F401, E402
+from app.models import ActivityLog, Task, User  # noqa: F401, E402
 
 
 @pytest.fixture

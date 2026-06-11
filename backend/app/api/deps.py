@@ -7,6 +7,7 @@ from app.core.exceptions import APIException
 from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
+from app.services.activity_service import ActivityService
 from app.services.auth_service import AuthService
 from app.services.task_service import TaskService
 
@@ -18,6 +19,11 @@ def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
 
 def get_task_service(db: Session = Depends(get_db)) -> TaskService:
     return TaskService(db)
+
+
+
+def get_activity_service(db: Session = Depends(get_db)) -> ActivityService:
+    return ActivityService(db)
 
 
 
