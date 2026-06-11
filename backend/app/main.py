@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1.activity import router as activity_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.realtime_sse import router as realtime_sse_router
+from app.api.v1.realtime_ws import router as realtime_ws_router
 from app.api.v1.tasks import router as tasks_router
 from app.core.config import settings
 from app.core.constants import HEALTH_PATH
@@ -22,6 +24,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(tasks_router)
 app.include_router(activity_router)
+app.include_router(realtime_sse_router)
+app.include_router(realtime_ws_router)
 
 
 @app.get(HEALTH_PATH)
