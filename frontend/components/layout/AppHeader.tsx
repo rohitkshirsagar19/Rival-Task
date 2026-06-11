@@ -1,3 +1,5 @@
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+
 type AppHeaderProps = {
   title: string;
   subtitle: string;
@@ -16,11 +18,9 @@ export function AppHeader({ title, subtitle }: AppHeaderProps) {
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-3 py-2 text-sm text-[color:var(--muted)]">
-            search title, owner, priority
+            TaskFlow workspace
           </div>
-          <div className="rounded-lg bg-[color:var(--accent)] px-4 py-2 text-sm font-medium text-[color:var(--accent-foreground)]">
-            New Task
-          </div>
+          <ThemeToggle />
         </div>
       </div>
     </header>

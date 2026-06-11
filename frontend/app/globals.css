@@ -14,6 +14,20 @@
   --accent-foreground: #f5fcfa;
 }
 
+:root[data-theme="dark"] {
+  --background: #11171c;
+  --foreground: #e7edf1;
+  --surface: #182127;
+  --surface-strong: #202b33;
+  --surface-elevated: #1b242b;
+  --surface-accent: #18342f;
+  --border-soft: rgba(231, 237, 241, 0.1);
+  --border-strong: rgba(231, 237, 241, 0.16);
+  --muted: #97a7b2;
+  --accent: #47b3a1;
+  --accent-foreground: #0f171c;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -40,6 +54,16 @@ body {
     linear-gradient(to bottom, rgba(24, 33, 39, 0.035) 1px, transparent 1px),
     linear-gradient(180deg, rgba(18, 107, 95, 0.06), rgba(255, 255, 255, 0));
   background-size: 28px 28px, 28px 28px, 100% 100%;
+  transition:
+    background-color 180ms ease,
+    color 180ms ease;
+}
+
+:root[data-theme="dark"] body {
+  background-image:
+    linear-gradient(to right, rgba(231, 237, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(231, 237, 241, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(71, 179, 161, 0.08), rgba(17, 23, 28, 0));
 }
 
 button,
