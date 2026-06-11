@@ -4,9 +4,19 @@ import type { Task } from "@/types/task";
 
 type TaskCardProps = {
   task: Task;
+  isCompleting?: boolean;
+  isDeleting?: boolean;
+  onComplete?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
 };
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({
+  task,
+  isCompleting = false,
+  isDeleting = false,
+  onComplete,
+  onDelete,
+}: TaskCardProps) {
   return (
     <Card className="p-4">
       <div className="flex items-start justify-between gap-4">
@@ -20,7 +30,13 @@ export function TaskCard({ task }: TaskCardProps) {
         </div>
       </div>
       <div className="mt-4">
-        <TaskActions task={task} />
+        <TaskActions
+          task={task}
+          isCompleting={isCompleting}
+          isDeleting={isDeleting}
+          onComplete={onComplete}
+          onDelete={onDelete}
+        />
       </div>
     </Card>
   );

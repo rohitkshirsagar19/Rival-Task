@@ -22,3 +22,24 @@ export const taskCreateSchema = z.object({
   priority: taskPrioritySchema.default("medium"),
   due_date: z.string().datetime().nullable().optional(),
 });
+
+export const taskFormSchema = z.object({
+  title: z.string().trim().min(3, "Title must be at least 3 characters.").max(160),
+  description: z
+    .string()
+    .trim()
+    .max(2000, "Description must be 2000 characters or fewer.")
+    .optional()
+    .or(z.literal("")),
+  status: taskStatusSchema,
+  priority: taskPrioritySchema,
+  due_date: z
+    .string()
+    .optional()
+    .or(z.literal(""))
+    .refine((value) => !value || !Number.isNaN(new Date(value).getTime()), {
+      message: "Due date must be a valid date and time.",
+    }),
+});
+
+export type TaskFormValues = z.infer<typeof taskFormSchema>;

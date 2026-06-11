@@ -1,22 +1,27 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
+import { ActivityPanel } from "@/components/activity/ActivityPanel";
 import { AppShell } from "@/components/layout/AppShell";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { ErrorState } from "@/components/ui/ErrorState";
-import { LoadingState } from "@/components/ui/LoadingState";
 import { PriorityFilter } from "@/components/tasks/PriorityFilter";
 import { SortDropdown } from "@/components/tasks/SortDropdown";
 import { StatusFilter } from "@/components/tasks/StatusFilter";
 import { TaskList } from "@/components/tasks/TaskList";
 import { TaskSearch } from "@/components/tasks/TaskSearch";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { useAuth } from "@/hooks/useAuth";
-import { useTasks } from "@/hooks/useTasks";
+import { useTaskEvents } from "@/hooks/useTaskEvents";
+import { useDeleteTaskMutation, useMarkTaskCompleteMutation, useTasks } from "@/hooks/useTasks";
+import { ApiClientError } from "@/lib/api";
+import type { RealtimeConnectionStatus, RealtimeTransport } from "@/types/realtime";
 import type {
+  Task,
   TaskFilters,
   TaskPriority,
   TaskSortBy,
@@ -36,14 +41,62 @@ function getTaskFilters(searchParams: URLSearchParams): TaskFilters {
   };
 }
 
+function getMutationErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof ApiClientError) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function getRealtimeBadgeTone(status: RealtimeConnectionStatus) {
+  if (status === "live") {
+    return "success" as const;
+  }
+
+  if (status === "reconnecting" || status === "connecting") {
+    return "warning" as const;
+  }
+
+  return "critical" as const;
+}
+
+function getRealtimeBadgeLabel(status: RealtimeConnectionStatus) {
+  if (status === "live") {
+    return "Live";
+  }
+
+  if (status === "reconnecting" || status === "connecting") {
+    return "Reconnecting";
+  }
+
+  return "Offline";
+}
+
+function getRealtimeTransportLabel(transport: RealtimeTransport) {
+  if (transport === "websocket") {
+    return "WebSocket";
+  }
+
+  if (transport === "sse") {
+    return "SSE fallback";
+  }
+
+  return "Disconnected";
+}
+
 export function TaskDashboard() {
   const { logout, status, user } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const filters = useMemo(() => getTaskFilters(searchParams), [searchParams]);
   const tasksQuery = useTasks(filters);
+  const completeTaskMutation = useMarkTaskCompleteMutation();
+  const deleteTaskMutation = useDeleteTaskMutation();
+  const realtime = useTaskEvents({ enabled: status === "authenticated" && Boolean(user) });
 
   const updateFilters = (patch: Partial<TaskFilters>) => {
     const next = new URLSearchParams(searchParams.toString());
@@ -75,6 +128,28 @@ export function TaskDashboard() {
 
     const serialized = next.toString();
     router.replace(serialized ? `${pathname}?${serialized}` : pathname);
+  };
+
+  const handleCompleteTask = async (task: Task) => {
+    setActionError(null);
+
+    try {
+      await completeTaskMutation.mutateAsync(task);
+    } catch (error) {
+      setActionError(
+        getMutationErrorMessage(error, "Unable to mark this task as completed right now."),
+      );
+    }
+  };
+
+  const handleDeleteTask = async (task: Task) => {
+    setActionError(null);
+
+    try {
+      await deleteTaskMutation.mutateAsync(task);
+    } catch (error) {
+      setActionError(getMutationErrorMessage(error, "Unable to delete this task right now."));
+    }
   };
 
   if (status !== "authenticated" || !user) {
@@ -118,8 +193,14 @@ export function TaskDashboard() {
                 </h3>
                 <p className="mt-1 text-sm text-[color:var(--muted)]">{user.email}</p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <Badge tone="success">Authenticated</Badge>
+                <Badge tone={getRealtimeBadgeTone(realtime.status)}>
+                  {getRealtimeBadgeLabel(realtime.status)}
+                </Badge>
+                <Button variant="secondary" onClick={() => router.push("/tasks/new")}>
+                  Create task
+                </Button>
                 <Button variant="secondary" onClick={() => void logout()}>
                   Log out
                 </Button>
@@ -180,11 +261,22 @@ export function TaskDashboard() {
             </div>
           </Card>
 
+          {actionError ? (
+            <div className="rounded-lg border border-[#f4c5bf] bg-[#fff5f3] px-4 py-3 text-sm text-[#8f2d18]">
+              {actionError}
+            </div>
+          ) : null}
+
           <TaskList
             data={taskData}
             isLoading={tasksQuery.isLoading}
             isError={tasksQuery.isError}
+            completingTaskId={completeTaskMutation.isPending ? completeTaskMutation.variables?.id : null}
+            deletingTaskId={deleteTaskMutation.isPending ? deleteTaskMutation.variables?.id : null}
             onRetry={() => void tasksQuery.refetch()}
+            onCreateTask={() => router.push("/tasks/new")}
+            onCompleteTask={(task) => void handleCompleteTask(task)}
+            onDeleteTask={(task) => void handleDeleteTask(task)}
             onPreviousPage={() =>
               updateFilters({ page: Math.max((filters.page ?? 1) - 1, 1) })
             }
@@ -194,27 +286,21 @@ export function TaskDashboard() {
 
         <section className="space-y-5">
           <Card className="p-5">
-            <p className="text-sm font-medium text-[color:var(--muted)]">Applied view</p>
+            <p className="text-sm font-medium text-[color:var(--muted)]">Realtime</p>
             <h3 className="mt-1 text-lg font-semibold text-[color:var(--foreground)]">
-              Current query state
+              Live connection state
             </h3>
             <div className="mt-5 space-y-3 text-sm text-[color:var(--muted)]">
               <div className="rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-3">
                 Status:{" "}
                 <span className="font-medium text-[color:var(--foreground)]">
-                  {filters.status || "All"}
+                  {getRealtimeBadgeLabel(realtime.status)}
                 </span>
               </div>
               <div className="rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-3">
-                Priority:{" "}
+                Transport:{" "}
                 <span className="font-medium text-[color:var(--foreground)]">
-                  {filters.priority || "All"}
-                </span>
-              </div>
-              <div className="rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-3">
-                Sort:{" "}
-                <span className="font-medium text-[color:var(--foreground)]">
-                  {filters.sortBy} / {filters.sortOrder}
+                  {getRealtimeTransportLabel(realtime.transport)}
                 </span>
               </div>
               <div className="rounded-lg border border-[color:var(--border-soft)] bg-[color:var(--surface)] px-4 py-3">
@@ -234,15 +320,7 @@ export function TaskDashboard() {
               onAction={() => void tasksQuery.refetch()}
             />
           ) : (
-            <Card className="p-5">
-              <p className="text-sm font-medium text-[color:var(--muted)]">Realtime note</p>
-              <h3 className="mt-1 text-lg font-semibold text-[color:var(--foreground)]">
-                Data source ready
-              </h3>
-              <p className="mt-3 text-sm text-[color:var(--muted)]">
-                The dashboard is now reading from the protected task API through TanStack Query and URL-backed filters.
-              </p>
-            </Card>
+            <ActivityPanel />
           )}
         </section>
       </div>

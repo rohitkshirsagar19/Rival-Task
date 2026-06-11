@@ -3,9 +3,19 @@ import type { Task } from "@/types/task";
 
 type TaskTableProps = {
   tasks: Task[];
+  completingTaskId?: number | null;
+  deletingTaskId?: number | null;
+  onComplete?: (task: Task) => void;
+  onDelete?: (task: Task) => void;
 };
 
-export function TaskTable({ tasks }: TaskTableProps) {
+export function TaskTable({
+  tasks,
+  completingTaskId,
+  deletingTaskId,
+  onComplete,
+  onDelete,
+}: TaskTableProps) {
   return (
     <div className="hidden overflow-hidden rounded-lg border border-[color:var(--border-soft)] lg:block">
       <table className="min-w-full divide-y divide-[color:var(--border-soft)]">
@@ -32,7 +42,13 @@ export function TaskTable({ tasks }: TaskTableProps) {
                 {task.description || "No description provided."}
               </td>
               <td className="px-4 py-4">
-                <TaskActions task={task} />
+                <TaskActions
+                  task={task}
+                  isCompleting={completingTaskId === task.id}
+                  isDeleting={deletingTaskId === task.id}
+                  onComplete={onComplete}
+                  onDelete={onDelete}
+                />
               </td>
             </tr>
           ))}
