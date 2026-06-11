@@ -1,6 +1,10 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.constants import DEFAULT_FRONTEND_ORIGIN, SERVICE_NAME
+from app.core.constants import (
+    DEFAULT_DATABASE_URL,
+    DEFAULT_FRONTEND_ORIGIN,
+    SERVICE_NAME,
+)
 
 
 class Settings(BaseSettings):
@@ -12,7 +16,7 @@ class Settings(BaseSettings):
 
     app_name: str = SERVICE_NAME
     frontend_origin: str = DEFAULT_FRONTEND_ORIGIN
+    database_url: str = DEFAULT_DATABASE_URL
 
 
 settings = Settings()
-
