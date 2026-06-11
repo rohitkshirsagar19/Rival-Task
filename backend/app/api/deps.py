@@ -8,10 +8,17 @@ from app.core.security import decode_access_token
 from app.db.session import get_db
 from app.models.user import User
 from app.services.auth_service import AuthService
+from app.services.task_service import TaskService
 
 
 def get_auth_service(db: Session = Depends(get_db)) -> AuthService:
     return AuthService(db)
+
+
+
+def get_task_service(db: Session = Depends(get_db)) -> TaskService:
+    return TaskService(db)
+
 
 
 def get_current_user(
