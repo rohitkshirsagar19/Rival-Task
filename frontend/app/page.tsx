@@ -1,3 +1,5 @@
+"use client";
+
 import { AppShell } from "@/components/layout/AppShell";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -9,6 +11,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 import { Pagination } from "@/components/ui/Pagination";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
+import { useAuth } from "@/hooks/useAuth";
 
 const summaryCards = [
   { label: "Due Today", value: "14", tone: "warning" as const },
@@ -24,13 +27,44 @@ const priorities = [
 ];
 
 export default function Home() {
+  const { logout, status, user } = useAuth();
+
+  if (status !== "authenticated" || !user) {
+    return (
+      <AppShell
+        title="Delivery Console"
+        subtitle="Monitor commitments, shape queues, and keep the next release moving."
+      >
+        <LoadingState label="Restoring your session" />
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell
       title="Delivery Console"
-      subtitle="Monitor commitments, shape queues, and keep the next release moving."
+      subtitle={`Signed in as ${user.name}. Monitor commitments, shape queues, and keep the next release moving.`}
     >
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.9fr)]">
         <section className="space-y-5">
+          <Card className="p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm text-[color:var(--muted)]">Session</p>
+                <h3 className="mt-1 text-lg font-semibold text-[color:var(--foreground)]">
+                  {user.name}
+                </h3>
+                <p className="mt-1 text-sm text-[color:var(--muted)]">{user.email}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Badge tone="success">Authenticated</Badge>
+                <Button variant="secondary" onClick={() => void logout()}>
+                  Log out
+                </Button>
+              </div>
+            </div>
+          </Card>
+
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {summaryCards.map((card) => (
               <Card key={card.label} className="p-4">
